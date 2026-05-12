@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habibe Brasil - Catálogo Premium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; overflow-x: hidden; }
+        .glass-header { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+        
+        .carousel-container { position: relative; width: 100%; height: 350px; overflow: hidden; border-radius: 1rem; }
+        .carousel-track { display: flex; transition: transform 0.5s ease-in-out; height: 100%; }
+        .carousel-slide { min-width: 100%; height: 100%; position: relative; }
+        .carousel-slide img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .product-gallery-main { width: 100%; height: 400px; object-fit: cover; border-radius: 1rem; }
+        .thumbnail-btn { width: 60px; height: 60px; border-radius: 0.5rem; overflow: hidden; border: 2px solid transparent; transition: all 0.2s; }
+        .thumbnail-btn.active { border-color: #0f172a; transform: scale(1.05); }
+
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast-enter { animation: slideIn 0.3s forwards; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <header class="glass-header sticky top-0 z-40 border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer" onclick="window.scrollTo(0,0)">
+                    <div class="w-10 h-10 bg-slate-900 text-white rounded-lg flex items-center justify-center font-bold text-xl shadow-md">H</div>
+                    <span class="font-bold text-xl tracking-tight hidden sm:block">Habibe Brasil</span>
+                </div>
+
+                <div class="flex items-center gap-2 sm:gap-4">
+                    <div id="admin-tools" class="hidden flex items-center gap-2">
+                        <button id="add-banner-btn" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all shadow-sm">
+                            <i class="fas fa-image"></i> <span class="hidden md:inline ml-1">Banners</span>
+                        </button>
+                        <button id="add-product-btn" class="bg-slate-900 hover:bg-slate-800 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all shadow-sm">
+                            <i class="fas fa-plus"></i> <span class="hidden md:inline ml-1">Produto</span>
+                        </button>
+                        <button id="settings-btn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-sm transition-colors">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <button id="admin-logout-btn" class="text-red-600 hover:text-red-700 font-medium text-sm px-3 py-2 rounded-lg hover:bg-red-50 transition-colors">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
+                    <button id="admin-login-btn" class="text-slate-600 hover:text-slate-900 font-medium text-sm px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors">
+                        <i class="fas fa-user-shield mr-2"></i> Admin
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <!-- Banners Section -->
+        <section id="carousel-section" class="mb-10 hidden">
+            <div class="carousel-container shadow-xl border border-slate-200">
+                <div id="carousel-track" class="carousel-track"></div>
+                <button id="prev-slide" class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-slate-900 w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md transition-all shadow-md z-10"><i class="fas fa-chevron-left"></i></button>
+                <button id="next-slide" class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-slate-900 w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md transition-all shadow-md z-10"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </section>
+
+        <div class="mb-8">
+            <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight">Coleção Habibe</h1>
+            <p class="text-slate-500 mt-2 text-lg">Elegância e qualidade em cada detalhe.</p>
+        </div>
+
+        <div id="status-container" class="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
+            <div id="spinner" class="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mb-4"></div>
+            <p id="status-text" class="text-slate-600 font-medium">Atualizando vitrine...</p>
+        </div>
+
+        <div id="products-grid" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
+        
+        <div id="empty-state" class="hidden py-32 text-center bg-white rounded-3xl border-2 border-dashed border-slate-200">
+            <i class="fas fa-box-open text-6xl text-slate-200 mb-4"></i>
+            <p class="text-slate-400 text-xl">Ainda não temos produtos cadastrados.</p>
+        </div>
+    </main>
+
+    <!-- Modal Detalhes (Sem botão de compra) -->
+    <div id="detail-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/90 backdrop-blur-lg">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-5xl max-h-[92vh] overflow-hidden flex flex-col lg:flex-row">
+            <!-- Galeria de Imagens -->
+            <div class="lg:w-3/5 p-4 lg:p-8 flex flex-col gap-4 bg-slate-50">
+                <div class="relative group flex-1 min-h-0">
+                    <img id="d-image-main" class="w-full h-full object-contain rounded-2xl transition-all duration-300">
+                    <button onclick="closeDetails()" class="absolute top-4 left-4 lg:hidden bg-white/80 p-2 rounded-full shadow-lg"><i class="fas fa-arrow-left"></i></button>
+                </div>
+                <div id="d-thumbnails" class="flex flex-wrap justify-center gap-3 py-2 overflow-x-auto"></div>
+            </div>
+            
+            <!-- Info do Produto -->
+            <div class="lg:w-2/5 p-8 lg:p-12 overflow-y-auto bg-white flex flex-col">
+                <div class="hidden lg:flex justify-end mb-4">
+                    <button onclick="closeDetails()" class="text-slate-300 hover:text-slate-900 transition-colors text-2xl"><i class="fas fa-times"></i></button>
+                </div>
+                
+                <h2 id="d-name" class="text-3xl font-black text-slate-900 mb-2 leading-tight"></h2>
+                <p id="d-price" class="text-3xl font-light text-slate-900 mb-8"></p>
+                
+                <div class="space-y-8 flex-1">
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-3">Sobre o Produto</h4>
+                        <p id="d-desc" class="text-slate-600 leading-relaxed text-base"></p>
+                    </div>
+                    
+                    <div id="d-colors-container">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-3">Cores</h4>
+                        <div id="d-colors" class="flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <div id="d-sizes-container">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-3">Tamanhos</h4>
+                        <div id="d-sizes" class="flex flex-wrap gap-3"></div>
+                    </div>
+                </div>
+                
+                <!-- Rodapé do modal apenas com instrução de fechamento p/ mobile -->
+                <div class="mt-8 pt-6 border-t border-slate-50 lg:hidden">
+                    <button onclick="closeDetails()" class="w-full bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold">Voltar ao Catálogo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modais de Admin mantidos para gestão -->
+    <div id="product-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/80 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto">
+            <h3 class="text-2xl font-bold mb-6 text-slate-900">Novo Produto Habibe</h3>
+            <div class="space-y-5">
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Imagens do Produto (Máx 5)</label>
+                    <div id="p-gallery-previews" class="grid grid-cols-5 gap-2 mb-2"></div>
+                    <div class="flex gap-2">
+                        <label class="flex-1 cursor-pointer bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-4 text-center hover:bg-slate-100 transition-all">
+                            <i class="fas fa-cloud-upload-alt text-slate-400 mb-1 block text-xl"></i>
+                            <span class="text-xs text-slate-500 font-medium">Carregar Fotos</span>
+                            <input type="file" id="p-files" accept="image/*" multiple class="hidden">
+                        </label>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Nome</label>
+                        <input type="text" id="p-name" class="w-full px-4 py-3 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Preço</label>
+                        <input type="text" id="p-price" class="w-full px-4 py-3 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none transition-all" placeholder="R$ 0,00">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Descrição</label>
+                    <textarea id="p-desc" rows="3" class="w-full px-4 py-3 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none resize-none transition-all"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Cores</label>
+                        <input type="text" id="p-colors" class="w-full px-4 py-3 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Tamanhos</label>
+                        <input type="text" id="p-sizes" class="w-full px-4 py-3 bg-slate-50 border-0 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none transition-all">
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-8 pt-6 border-t border-slate-100">
+                <button id="close-product" class="px-6 py-3 text-slate-400 font-bold hover:text-slate-900">Cancelar</button>
+                <button id="save-product" class="px-10 py-3 bg-slate-900 text-white rounded-xl font-bold shadow-lg shadow-slate-200 hover:bg-slate-800 transition-all">Publicar Produto</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outros modais administrativos -->
+    <div id="login-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/90 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-sm">
+            <h3 class="text-xl font-bold mb-6 text-center">Acesso Habibe</h3>
+            <input type="password" id="admin-password-input" class="w-full px-4 py-3 bg-slate-50 border-0 rounded-xl mb-4 focus:ring-2 focus:ring-slate-900 outline-none text-center" placeholder="Senha do Administrador">
+            <div class="flex flex-col gap-2">
+                <button id="confirm-login" class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold">Entrar</button>
+                <button id="close-login" class="w-full py-3 text-slate-400 text-sm">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/80 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-md">
+            <h3 class="text-xl font-bold mb-6">Configurações Gerais</h3>
+            <div class="space-y-6">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Senha em Uso</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="current-pwd-display" readonly class="flex-1 px-4 py-3 bg-slate-50 rounded-xl text-slate-600 font-mono text-sm">
+                        <button onclick="copyPwd()" class="p-3 bg-slate-100 rounded-xl text-slate-600 hover:bg-slate-200 transition-colors"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Redefinir Senha</label>
+                    <input type="text" id="new-pwd-input" class="w-full px-4 py-3 bg-slate-50 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none" placeholder="Nova senha">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-8">
+                <button id="close-settings" class="px-4 py-2 text-slate-500 font-bold">Voltar</button>
+                <button id="save-settings" class="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold shadow-lg shadow-slate-200">Salvar Mudanças</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="banner-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/80 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-xl">
+            <h3 class="text-2xl font-bold mb-6 text-slate-900">Gerenciar Vitrine</h3>
+            <div class="mb-8">
+                <label class="block text-xs font-bold text-slate-400 uppercase mb-3">Novo Banner Promocional</label>
+                <div class="flex gap-4 items-center">
+                    <input type="file" id="b-file" accept="image/*" class="text-sm flex-1">
+                    <button id="save-banner" class="bg-amber-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-amber-100 hover:bg-amber-600">Adicionar</button>
+                </div>
+            </div>
+            <div class="max-h-64 overflow-y-auto space-y-3 pr-2" id="banner-list"></div>
+            <div class="flex justify-end mt-8">
+                <button id="close-banner" class="px-6 py-3 bg-slate-100 rounded-xl font-bold text-slate-600">Fechar Painel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed bottom-8 right-8 z-[100] flex flex-col gap-3"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, deleteDoc, getDoc, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDPpo8oVbkJHIXKuCXMVYXRV9fOHQ_kG8A",
+            authDomain: "habibe-brasil.firebaseapp.com",
+            projectId: "habibe-brasil",
+            storageBucket: "habibe-brasil.firebasestorage.app",
+            messagingSenderId: "1097627992665",
+            appId: "1:1097627992665:web:64eab8bf60005fe745a748",
+            measurementId: "G-HS7RVFD5G5"
+        };
+
+        const appId = 'habibe-catalogo';
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let isAdmin = false;
+        let adminPassword = 'admin';
+        let currentSlide = 0;
+        let carouselInterval;
+        let productsList = [];
+        let tempImages = [];
+
+        const DOM = {
+            status: document.getElementById('status-container'),
+            grid: document.getElementById('products-grid'),
+            empty: document.getElementById('empty-state'),
+            loginModal: document.getElementById('login-modal'),
+            productModal: document.getElementById('product-modal'),
+            settingsModal: document.getElementById('settings-modal'),
+            bannerModal: document.getElementById('banner-modal'),
+            detailModal: document.getElementById('detail-modal'),
+            adminTools: document.getElementById('admin-tools'),
+            loginBtn: document.getElementById('admin-login-btn'),
+            track: document.getElementById('carousel-track'),
+            carouselSec: document.getElementById('carousel-section'),
+            galleryPreviews: document.getElementById('p-gallery-previews')
+        };
+
+        async function init() {
+            try { await signInAnonymously(auth); } catch (e) { console.error(e); }
+        }
+
+        onAuthStateChanged(auth, (user) => { if (user) syncData(); });
+
+        function syncData() {
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'products'), (snap) => {
+                productsList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderGrid();
+                DOM.status.classList.add('hidden');
+            });
+
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'banners'), (snap) => {
+                const banners = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderCarousel(banners);
+                renderBannerList(banners);
+            });
+
+            onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'admin'), (snap) => {
+                if (snap.exists()) {
+                    adminPassword = snap.data().password;
+                    document.getElementById('current-pwd-display').value = adminPassword;
+                } else {
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'admin'), { password: 'admin' });
+                }
+            });
+        }
+
+        function renderGrid() {
+            if (productsList.length === 0) {
+                DOM.grid.classList.add('hidden');
+                DOM.empty.classList.remove('hidden');
+                return;
+            }
+            DOM.empty.classList.add('hidden');
+            DOM.grid.classList.remove('hidden');
+            DOM.grid.innerHTML = productsList.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0)).map(p => `
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden group relative transition-all hover:shadow-xl hover:-translate-y-1 cursor-pointer" onclick="viewDetails('${p.id}')">
+                    ${isAdmin ? `<button onclick="event.stopPropagation(); deleteItem('products', '${p.id}')" class="absolute top-4 right-4 z-20 bg-red-500 text-white w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg scale-75 group-hover:scale-100"><i class="fas fa-trash text-sm"></i></button>` : ''}
+                    <div class="h-[22rem] bg-slate-50 flex items-center justify-center overflow-hidden">
+                        <img src="${(p.images && p.images.length > 0) ? p.images[0] : 'https://placehold.co/600x800?text=Habibe'}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000">
+                    </div>
+                    <div class="p-6">
+                        <h3 class="font-bold text-slate-800 text-lg truncate">${p.name}</h3>
+                        <p class="text-slate-400 font-medium text-sm mt-0.5">R$ ${p.price}</p>
+                        ${p.sizes ? `
+                        <div class="mt-4 flex flex-wrap gap-1.5">
+                            ${p.sizes.split(',').slice(0,3).map(s => `<span class="text-[10px] uppercase font-bold tracking-widest bg-slate-100 px-2 py-1 rounded text-slate-500">${s.trim()}</span>`).join('')}
+                        </div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.viewDetails = (id) => {
+            const p = productsList.find(x => x.id === id);
+            if (!p) return;
+
+            const imgs = p.images || [];
+            const mainImg = document.getElementById('d-image-main');
+            mainImg.src = imgs[0] || '';
+            
+            document.getElementById('d-name').innerText = p.name || '';
+            document.getElementById('d-price').innerText = `R$ ${p.price || '0,00'}`;
+            document.getElementById('d-desc').innerText = p.description || 'Nenhuma informação adicional disponível.';
+            
+            const thumbBox = document.getElementById('d-thumbnails');
+            if (imgs.length > 1) {
+                thumbBox.classList.remove('hidden');
+                thumbBox.innerHTML = imgs.map((url, i) => `
+                    <button onclick="setMainImage('${url}', this)" class="thumbnail-btn ${i === 0 ? 'active' : ''}">
+                        <img src="${url}" class="w-full h-full object-cover">
+                    </button>
+                `).join('');
+            } else {
+                thumbBox.classList.add('hidden');
+            }
+
+            const colorBox = document.getElementById('d-colors');
+            const sizeBox = document.getElementById('d-sizes');
+            
+            if (p.colors) {
+                document.getElementById('d-colors-container').classList.remove('hidden');
+                colorBox.innerHTML = p.colors.split(',').map(c => `<span class="px-4 py-1.5 bg-slate-50 rounded-full text-sm font-medium text-slate-600 border border-slate-100">${c.trim()}</span>`).join('');
+            } else {
+                document.getElementById('d-colors-container').classList.add('hidden');
+            }
+
+            if (p.sizes) {
+                document.getElementById('d-sizes-container').classList.remove('hidden');
+                sizeBox.innerHTML = p.sizes.split(',').map(s => `<span class="w-12 h-12 flex items-center justify-center bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-800 shadow-sm">${s.trim()}</span>`).join('');
+            } else {
+                document.getElementById('d-sizes-container').classList.add('hidden');
+            }
+
+            DOM.detailModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.setMainImage = (url, btn) => {
+            document.getElementById('d-image-main').src = url;
+            document.querySelectorAll('.thumbnail-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        };
+
+        window.closeDetails = () => {
+            DOM.detailModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        };
+
+        function renderCarousel(banners) {
+            if (banners.length === 0) {
+                DOM.carouselSec.classList.add('hidden');
+                return;
+            }
+            DOM.carouselSec.classList.remove('hidden');
+            DOM.track.innerHTML = banners.map(b => `
+                <div class="carousel-slide">
+                    <img src="${b.image}">
+                </div>
+            `).join('');
+            startCarousel(banners.length);
+        }
+
+        function renderBannerList(banners) {
+            document.getElementById('banner-list').innerHTML = banners.map(b => `
+                <div class="flex items-center justify-between p-3 border border-slate-100 rounded-2xl bg-slate-50">
+                    <img src="${b.image}" class="w-20 h-12 object-cover rounded-xl shadow-sm">
+                    <button onclick="deleteItem('banners', '${b.id}')" class="text-red-500 w-10 h-10 flex items-center justify-center hover:bg-red-50 rounded-full transition-colors"><i class="fas fa-trash"></i></button>
+                </div>
+            `).join('');
+        }
+
+        function startCarousel(count) {
+            clearInterval(carouselInterval);
+            currentSlide = 0;
+            DOM.track.style.transform = `translateX(0)`;
+            if (count <= 1) return;
+            carouselInterval = setInterval(() => moveSlide(1, count), 5000);
+        }
+
+        function moveSlide(dir, count) {
+            currentSlide = (currentSlide + dir + count) % count;
+            DOM.track.style.transform = `translateX(-${currentSlide * 100}%)`;
+        }
+
+        document.getElementById('prev-slide').onclick = () => moveSlide(-1, DOM.track.children.length);
+        document.getElementById('next-slide').onclick = () => moveSlide(1, DOM.track.children.length);
+
+        async function toBase64(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+            });
+        }
+
+        document.getElementById('p-files').onchange = async (e) => {
+            const files = Array.from(e.target.files);
+            if (tempImages.length + files.length > 5) {
+                showToast("Máximo de 5 imagens", "error");
+                return;
+            }
+            for (const file of files) {
+                const b64 = await toBase64(file);
+                tempImages.push(b64);
+            }
+            renderGalleryPreviews();
+        };
+
+        function renderGalleryPreviews() {
+            DOM.galleryPreviews.innerHTML = tempImages.map((img, i) => `
+                <div class="relative w-full aspect-square bg-slate-100 rounded-lg overflow-hidden group">
+                    <img src="${img}" class="w-full h-full object-cover">
+                    <button onclick="removeTempImg(${i})" class="absolute inset-0 bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i class="fas fa-times"></i></button>
+                </div>
+            `).join('');
+        }
+
+        window.removeTempImg = (idx) => {
+            tempImages.splice(idx, 1);
+            renderGalleryPreviews();
+        };
+
+        document.getElementById('confirm-login').onclick = () => {
+            const pwd = document.getElementById('admin-password-input').value;
+            if (pwd === adminPassword) {
+                isAdmin = true;
+                DOM.loginModal.classList.add('hidden');
+                DOM.loginBtn.classList.add('hidden');
+                DOM.adminTools.classList.remove('hidden');
+                showToast("Acesso Liberado");
+                renderGrid();
+            } else {
+                showToast("Senha Inválida", "error");
+            }
+        };
+
+        document.getElementById('save-product').onclick = async () => {
+            const name = document.getElementById('p-name').value;
+            const price = document.getElementById('p-price').value;
+            const desc = document.getElementById('p-desc').value;
+            const colors = document.getElementById('p-colors').value;
+            const sizes = document.getElementById('p-sizes').value;
+
+            if (!name || !price || tempImages.length === 0) {
+                return showToast("Preencha os campos obrigatórios", "error");
+            }
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), {
+                    name, price, description: desc, colors, sizes, images: tempImages, createdAt: Date.now()
+                });
+                DOM.productModal.classList.add('hidden');
+                showToast("Produto Salvo!");
+                resetProductForm();
+            } catch (e) { showToast("Erro ao salvar", "error"); }
+        };
+
+        function resetProductForm() {
+            ['p-name', 'p-price', 'p-desc', 'p-colors', 'p-sizes', 'p-files'].forEach(id => document.getElementById(id).value = '');
+            tempImages = [];
+            DOM.galleryPreviews.innerHTML = '';
+        }
+
+        document.getElementById('save-banner').onclick = async () => {
+            const file = document.getElementById('b-file').files[0];
+            if (!file) return showToast("Escolha um banner", "error");
+            const image = await toBase64(file);
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'banners'), { image });
+            showToast("Banner Adicionado");
+            document.getElementById('b-file').value = '';
+        };
+
+        document.getElementById('save-settings').onclick = async () => {
+            const newPwd = document.getElementById('new-pwd-input').value;
+            if (newPwd.length < 3) return showToast("Mínimo 3 caracteres", "error");
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'admin'), { password: newPwd });
+            showToast("Configuração Salva");
+            DOM.settingsModal.classList.add('hidden');
+        };
+
+        window.deleteItem = async (col, id) => {
+            if (!confirm("Confirmar exclusão?")) return;
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', col, id));
+            showToast("Item removido");
+        };
+
+        document.getElementById('admin-login-btn').onclick = () => DOM.loginModal.classList.remove('hidden');
+        document.getElementById('close-login').onclick = () => DOM.loginModal.classList.add('hidden');
+        document.getElementById('admin-logout-btn').onclick = () => { isAdmin = false; location.reload(); };
+        document.getElementById('settings-btn').onclick = () => DOM.settingsModal.classList.remove('hidden');
+        document.getElementById('close-settings').onclick = () => DOM.settingsModal.classList.add('hidden');
+        document.getElementById('add-product-btn').onclick = () => { resetProductForm(); DOM.productModal.classList.remove('hidden'); };
+        document.getElementById('close-product').onclick = () => DOM.productModal.classList.add('hidden');
+        document.getElementById('add-banner-btn').onclick = () => DOM.bannerModal.classList.remove('hidden');
+        document.getElementById('close-banner').onclick = () => DOM.bannerModal.classList.add('hidden');
+
+        window.copyPwd = () => {
+            const val = document.getElementById('current-pwd-display').value;
+            navigator.clipboard.writeText(val);
+            showToast("Copiado!");
+        };
+
+        function showToast(msg, type = 'success') {
+            const t = document.createElement('div');
+            t.className = `px-6 py-3 rounded-2xl text-white text-sm font-bold shadow-2xl toast-enter ${type === 'success' ? 'bg-slate-900' : 'bg-red-600'}`;
+            t.innerText = msg;
+            document.getElementById('toast-container').appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
